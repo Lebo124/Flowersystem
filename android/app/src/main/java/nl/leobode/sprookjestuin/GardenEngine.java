@@ -40,7 +40,7 @@ public final class GardenEngine {
             FlowerGenome child=null;
             for(int attempt=0;attempt<8;attempt++) {
                 child=FlowerGenome.child(a,b,random,mutationRate);
-                if(isDistinct(child,next,.105f)) break;
+                if(isDistinct(child,next,.105f,.32f)) break;
             }
             next.add(child);
         }
@@ -53,8 +53,9 @@ public final class GardenEngine {
         generation++;
     }
 
-    private boolean isDistinct(FlowerGenome candidate,List<FlowerGenome> others,float minimum) {
-        for(FlowerGenome other:others) if(candidate.distanceTo(other)<minimum)return false;
+    private boolean isDistinct(FlowerGenome candidate,List<FlowerGenome> others,float geneticMinimum,float visualMinimum) {
+        for(FlowerGenome other:others)
+            if(candidate.distanceTo(other)<geneticMinimum || candidate.visualDistanceTo(other)<visualMinimum)return false;
         return true;
     }
 
