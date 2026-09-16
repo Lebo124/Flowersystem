@@ -6,6 +6,6 @@ import android.os.Bundle;
 public final class MainActivity extends Activity {
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
-        setContentView(new FairyGardenView(this));
+        setContentView(new LivingGardenView(this));
     }
 }
