@@ -21,3 +21,9 @@ De kandidaatselectie controleert nu specifiek op zichtbare verschillen. De tuin 
 Versie 0.4 verwijdert de ongewenste halo's, begrenst bloemen binnen hun keuzekaart en legt zes perken rond een slingerend tuinpad. Bijen, vlinders en nachtvlinders kiezen op basis van verschillende bloemkenmerken twee bewaarde tuinbloemen; één kandidaat in de volgende generatie ontstaat uit hun bestuiving.
 
 In fase twee kunnen insecten voorkeuren en stuifmeel krijgen, zodat hun routes werkelijk bepalen welke bloemen zich voortplanten.
+
+## Versie 0.5 — Levende Sprookjestuin (experiment)
+
+Deze aparte experimentele spelstand vervangt de rechtstreekse vertaling van gen naar uiterlijk door een ontwikkelingslaag. Vierentwintig genen regelen onder andere groeisignaal, groeiremmer, vertakkingssignaal, bloeisignaal en twee pigmentstoffen. Zon, regen, plaatselijke bodemvochtigheid en schaduw veranderen de productie van die stoffen. De stoffen bepalen samen hoe wortel, steel, bladeren, knop, bloem en zaden zich gedurende een seizoen van zestig dagen ontwikkelen.
+
+De speler kan zon, regen of schaduw kiezen en een plant aanraken om haar interne stoffen te bekijken. Na ieder seizoen planten vooral de gezonde planten met veel zaden zich automatisch voort. Daardoor selecteert de omgeving indirect het DNA, zonder dat één gen simpelweg 'de kleur' of 'het aantal bloembladen' is.
