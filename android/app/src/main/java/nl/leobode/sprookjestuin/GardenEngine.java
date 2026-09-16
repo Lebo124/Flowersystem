@@ -11,6 +11,7 @@ public final class GardenEngine {
     public final List<FlowerGenome> garden = new ArrayList<>();
     public final boolean[] selected = new boolean[POPULATION];
     public int generation = 1;
+    public int lastPollinator = -1; // 0 bee, 1 butterfly, 2 moth
 
     public GardenEngine() { reset(); }
 
@@ -44,13 +45,35 @@ public final class GardenEngine {
             }
             next.add(child);
         }
-        // Two wild seedlings prevent a tiny chosen gene pool from collapsing
-        // into eight nearly identical flowers.
+        // One pollinator cross can bring an older garden trait back.
         next.add(FlowerGenome.child(parents.get(random.nextInt(parents.size())),FlowerGenome.random(random),random,.28f));
-        next.add(FlowerGenome.random(random));
+        next.add(pollinatedSeedling(parents));
         candidates.clear(); candidates.addAll(next);
         for(int i=0;i<selected.length;i++) selected[i]=false;
         generation++;
+    }
+
+    private FlowerGenome pollinatedSeedling(List<FlowerGenome> fallback) {
+        if(garden.size()<2) { lastPollinator=-1; return FlowerGenome.random(random); }
+        lastPollinator=random.nextInt(3);
+        FlowerGenome a=weightedGardenChoice(lastPollinator,null);
+        FlowerGenome b=weightedGardenChoice(lastPollinator,a);
+        return FlowerGenome.child(a,b,random,.22f);
+    }
+
+    private FlowerGenome weightedGardenChoice(int insect,FlowerGenome exclude) {
+        float total=0;
+        for(FlowerGenome g:garden) if(g!=exclude) total+=attraction(g,insect);
+        float pick=random.nextFloat()*Math.max(.001f,total);
+        for(FlowerGenome g:garden) if(g!=exclude) { pick-=attraction(g,insect); if(pick<=0)return g; }
+        return garden.get(random.nextInt(garden.size()));
+    }
+
+    private float attraction(FlowerGenome g,int insect) {
+        float[] x=g.genes;
+        if(insect==0) return .2f+x[15]*.9f+(1-Math.abs(x[7]-.12f))*1.1f; // bee: open heart, warm
+        if(insect==1) return .2f+x[9]*.8f+x[10]*.7f+x[13]*.5f;           // butterfly: large, vivid
+        return .2f+x[14]*1.1f+(1-x[13])*.55f+x[16]*.45f;               // moth: pale, luminous
     }
 
     private boolean isDistinct(FlowerGenome candidate,List<FlowerGenome> others,float geneticMinimum,float visualMinimum) {
@@ -60,7 +83,7 @@ public final class GardenEngine {
     }
 
     public void reset() {
-        candidates.clear(); garden.clear(); generation=1;
+        candidates.clear(); garden.clear(); generation=1; lastPollinator=-1;
         for(int i=0;i<POPULATION;i++) candidates.add(FlowerGenome.random(random));
         for(int i=0;i<selected.length;i++) selected[i]=false;
     }
