@@ -1,4 +1,4 @@
-# Sprookjestuin voor Android — versie 0.2
+# Sprookjestuin voor Android — versie 0.3
 
 Een nieuwe Android-interpretatie van Leo Bode's oorspronkelijke p5.js Flowersystem.
 
@@ -13,5 +13,9 @@ Een nieuwe Android-interpretatie van Leo Bode's oorspronkelijke p5.js Flowersyst
 - geschikt voor staande en liggende Android-schermen.
 
 Versie 0.2 bewaakt de genetische variatie actief, voegt wilde zaailingen toe en gebruikt verschillende steel- en bladvormen. De tuin wordt in natuurlijke groepjes en dieptelagen opgebouwd.
+
+Versie 0.3 geeft de bloemhoofden een 2½D-weergave met gebogen bloembladen, perspectiefverkorting, overlappende lagen, nerven, lichtval en slagschaduwen.
+
+De kandidaatselectie controleert nu specifiek op zichtbare verschillen. De tuin gebruikt zes afzonderlijke bedden; ieder bed herhaalt één gekozen bloemvariëteit in plaats van alle bloemen door elkaar te strooien.
 
 In fase twee kunnen insecten voorkeuren en stuifmeel krijgen, zodat hun routes werkelijk bepalen welke bloemen zich voortplanten.
