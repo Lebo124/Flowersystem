@@ -33,14 +33,29 @@ public final class GardenEngine {
         List<FlowerGenome> next = new ArrayList<>();
         // Keep the strongest personal choice recognizable.
         next.add(parents.get(0).copy());
-        while(next.size()<POPULATION) {
+        float mutationRate=parents.size()==1?.34f:parents.size()==2?.25f:.19f;
+        while(next.size()<POPULATION-2) {
             FlowerGenome a=parents.get(random.nextInt(parents.size()));
             FlowerGenome b=parents.get(random.nextInt(parents.size()));
-            next.add(FlowerGenome.child(a,b,random,.16f));
+            FlowerGenome child=null;
+            for(int attempt=0;attempt<8;attempt++) {
+                child=FlowerGenome.child(a,b,random,mutationRate);
+                if(isDistinct(child,next,.105f)) break;
+            }
+            next.add(child);
         }
+        // Two wild seedlings prevent a tiny chosen gene pool from collapsing
+        // into eight nearly identical flowers.
+        next.add(FlowerGenome.child(parents.get(random.nextInt(parents.size())),FlowerGenome.random(random),random,.28f));
+        next.add(FlowerGenome.random(random));
         candidates.clear(); candidates.addAll(next);
         for(int i=0;i<selected.length;i++) selected[i]=false;
         generation++;
+    }
+
+    private boolean isDistinct(FlowerGenome candidate,List<FlowerGenome> others,float minimum) {
+        for(FlowerGenome other:others) if(candidate.distanceTo(other)<minimum)return false;
+        return true;
     }
 
     public void reset() {
