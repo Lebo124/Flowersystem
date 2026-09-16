@@ -45,7 +45,9 @@ public final class FairyGardenView extends View {
     private void drawTop(Canvas c) {
         p.setColor(Color.WHITE); p.setTextSize(dp(25)); p.setFakeBoldText(true); c.drawText("Sprookjestuin",dp(20),dp(38),p); p.setFakeBoldText(false);
         p.setColor(Color.rgb(220,203,234)); p.setTextSize(dp(13));
-        c.drawText(gardenMode?"De bloemen die je door de generaties heen bewaarde":String.format(Locale.getDefault(),"Generatie %d  •  kies maximaal drie bloemen",engine.generation),dp(20),dp(61),p);
+        String subtitle=gardenMode?"De bloemen die je door de generaties heen bewaarde":String.format(Locale.getDefault(),"Generatie %d  •  kies maximaal drie bloemen",engine.generation);
+        if(!gardenMode && engine.lastPollinator>=0) subtitle+="  •  "+pollinatorName(engine.lastPollinator)+" bracht stuifmeel";
+        c.drawText(subtitle,dp(20),dp(61),p);
     }
 
     private void drawSelection(Canvas c,float t) {
@@ -55,7 +57,8 @@ public final class FairyGardenView extends View {
         for(int i=0;i<GardenEngine.POPULATION;i++) {
             int col=i%cols,row=i/cols; float l=margin+col*(w+gap),tt=top+row*(h+gap); cards[i].set(l,tt,l+w,tt+h);
             p.setColor(engine.selected[i]?Color.argb(165,112,74,139):Color.argb(95,255,255,255)); c.drawRoundRect(cards[i],dp(18),dp(18),p);
-            float cx=cards[i].centerX(), ground=cards[i].bottom-dp(16), scale=Math.min(w,h)/dp(165);
+            float cx=cards[i].centerX(), ground=cards[i].bottom-dp(16);
+            float scale=Math.min(w/dp(145),h/dp(190))*.83f;
             drawFlower(c,engine.candidates.get(i),cx,ground,scale,engine.selected[i],t+i);
             if(engine.selected[i]) { p.setColor(Color.WHITE); p.setTextSize(dp(18)); c.drawText("✦",l+dp(11),tt+dp(23),p); }
         }
@@ -66,23 +69,31 @@ public final class FairyGardenView extends View {
         p.setColor(Color.rgb(31,48,61)); c.drawOval(-getWidth()*.2f,ground-dp(180),getWidth()*.75f,ground+dp(30),p);
         p.setColor(Color.rgb(24,67,51)); c.drawOval(getWidth()*.25f,ground-dp(145),getWidth()*1.2f,ground+dp(38),p);
         p.setColor(Color.rgb(18,74,48)); c.drawRect(0,ground-dp(42),getWidth(),ground,p);
+        drawPath(c,ground);
         if(engine.garden.isEmpty()) { p.setColor(Color.rgb(225,210,236)); p.setTextSize(dp(17)); p.setTextAlign(Paint.Align.CENTER); c.drawText("Je tuin wacht op haar eerste gekozen bloemen",getWidth()/2f,getHeight()/2f,p); p.setTextAlign(Paint.Align.LEFT); }
         int beds=Math.min(6,engine.garden.size());
         for(int bed=0;bed<beds;bed++) {
             FlowerGenome variety=engine.garden.get(engine.garden.size()-beds+bed);
-            int row=bed/3,col=bed%3; float depth=row==0?.72f:.18f;
-            float centerX=(col+.5f)*getWidth()/3f+(row==0?dp(12):0);
-            float base=ground-dp(8)-depth*dp(52);
+            int row=bed/2,side=bed%2; float depth=.72f-row*.25f;
+            float spreadFromPath=dp(74)+row*dp(17);
+            float centerX=getWidth()/2f+(side==0?-spreadFromPath:spreadFromPath);
+            float base=ground-dp(9)-depth*dp(58);
             int count=4+(bed%3);
             // Each bed repeats one selected variety, as a real planted border would.
             for(int n=0;n<count;n++) {
-                float spread=(n-(count-1)/2f)*dp(24);
+                float spread=(n-(count-1)/2f)*dp(18);
                 float stagger=((n*37+bed*19)%17-dp(0))*dp(.45f);
                 float scale=(row==0?.54f:.76f)+(n%2)*.06f;
                 drawFlower(c,variety,centerX+spread,base-stagger,scale,false,t+bed*.7f+n*.12f);
             }
         }
         drawInsects(c,t,ground);
+    }
+
+    private void drawPath(Canvas c,float ground) {
+        Path path=new Path(); path.moveTo(getWidth()*.37f,ground); path.cubicTo(getWidth()*.47f,ground-dp(70),getWidth()*.42f,ground-dp(145),getWidth()*.52f,ground-dp(225)); path.lineTo(getWidth()*.58f,ground-dp(225)); path.cubicTo(getWidth()*.53f,ground-dp(140),getWidth()*.64f,ground-dp(65),getWidth()*.66f,ground); path.close();
+        p.setColor(Color.rgb(113,97,83)); c.drawPath(path,p);
+        p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(dp(2)); p.setColor(Color.argb(80,230,210,175)); c.drawPath(path,p); p.setStyle(Paint.Style.FILL);
     }
 
     private void drawFlower(Canvas c,FlowerGenome dna,float x,float ground,float scale,boolean chosen,float t) {
@@ -116,7 +127,7 @@ public final class FairyGardenView extends View {
         p.setShader(new RadialGradient(cx-core*.42f,cy-core*.48f,core*2.5f,Color.WHITE,Color.HSVToColor(new float[]{hue2,.8f,.62f}),Shader.TileMode.CLAMP)); c.drawCircle(cx,cy,core*2,p); p.setShader(null);
         p.setColor(Color.argb(115,255,245,190));
         for(int i=0;i<7;i++){float a=(float)(i*Math.PI*2/7);c.drawCircle(cx+(float)Math.cos(a)*core*1.15f,cy+(float)Math.sin(a)*core*1.15f,Math.max(dp(.7f),core*.11f),p);}
-        p.setColor(chosen?Color.argb(70,255,240,255):Color.argb(35,220,190,255)); c.drawCircle(cx,cy,dp((34+g[16]*18)*scale),p);
+        if(chosen) { p.setColor(Color.argb(75,255,240,255)); c.drawCircle(cx,cy,dp((34+g[16]*18)*scale),p); }
     }
 
     private void drawPetal3D(Canvas c,float cx,float cy,float width,float length,int color,float angle,float perspective,float scale,int layer) {
@@ -151,8 +162,10 @@ public final class FairyGardenView extends View {
     }
 
     private void drawInsects(Canvas c,float t,float ground) {
-        for(int i=0;i<4;i++) { float x=(t*(24+i*5)+i*137)%getWidth(), y=ground-dp(80+i*38)-(float)Math.sin(t*1.7+i)*dp(28); p.setColor(Color.argb(180,255,235,155)); c.drawOval(x-dp(5),y-dp(2),x,y+dp(3),p); c.drawOval(x,y-dp(2),x+dp(5),y+dp(3),p); p.setColor(Color.rgb(70,52,66)); c.drawCircle(x,y+dp(2),dp(2.2f),p); }
+        for(int i=0;i<4;i++) { float x=(t*(24+i*5)+i*137)%getWidth(), y=ground-dp(80+i*38)-(float)Math.sin(t*1.7+i)*dp(28); int wing=i%3==1?Color.argb(155,180,205,255):i%3==2?Color.argb(145,235,225,245):Color.argb(180,255,235,155); p.setColor(wing); c.drawOval(x-dp(6),y-dp(3),x,y+dp(3),p); c.drawOval(x,y-dp(3),x+dp(6),y+dp(3),p); p.setColor(Color.rgb(70,52,66)); c.drawCircle(x,y+dp(2),dp(2.2f),p); }
     }
+
+    private String pollinatorName(int insect){return insect==0?"Een bij":insect==1?"Een vlinder":"Een nachtvlinder";}
 
     private void drawButtons(Canvas c) {
         float y=getHeight()-dp(64),gap=dp(8),margin=dp(14),w=(getWidth()-margin*2-gap*2)/3;
