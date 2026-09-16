@@ -67,13 +67,20 @@ public final class FairyGardenView extends View {
         p.setColor(Color.rgb(24,67,51)); c.drawOval(getWidth()*.25f,ground-dp(145),getWidth()*1.2f,ground+dp(38),p);
         p.setColor(Color.rgb(18,74,48)); c.drawRect(0,ground-dp(42),getWidth(),ground,p);
         if(engine.garden.isEmpty()) { p.setColor(Color.rgb(225,210,236)); p.setTextSize(dp(17)); p.setTextAlign(Paint.Align.CENTER); c.drawText("Je tuin wacht op haar eerste gekozen bloemen",getWidth()/2f,getHeight()/2f,p); p.setTextAlign(Paint.Align.LEFT); }
-        for(int i=0;i<engine.garden.size();i++) {
-            int hash=Math.abs((i+11)*1103515245+12345);
-            float x=dp(22)+(hash%1000)/999f*(getWidth()-dp(44));
-            float depth=((hash/1000)%1000)/999f;
-            float base=ground-dp(8)-depth*dp(48);
-            float scale=.48f+(1-depth)*.42f;
-            drawFlower(c,engine.garden.get(i),x,base,scale,false,t+i*.3f);
+        int beds=Math.min(6,engine.garden.size());
+        for(int bed=0;bed<beds;bed++) {
+            FlowerGenome variety=engine.garden.get(engine.garden.size()-beds+bed);
+            int row=bed/3,col=bed%3; float depth=row==0?.72f:.18f;
+            float centerX=(col+.5f)*getWidth()/3f+(row==0?dp(12):0);
+            float base=ground-dp(8)-depth*dp(52);
+            int count=4+(bed%3);
+            // Each bed repeats one selected variety, as a real planted border would.
+            for(int n=0;n<count;n++) {
+                float spread=(n-(count-1)/2f)*dp(24);
+                float stagger=((n*37+bed*19)%17-dp(0))*dp(.45f);
+                float scale=(row==0?.54f:.76f)+(n%2)*.06f;
+                drawFlower(c,variety,centerX+spread,base-stagger,scale,false,t+bed*.7f+n*.12f);
+            }
         }
         drawInsects(c,t,ground);
     }
@@ -92,16 +99,46 @@ public final class FairyGardenView extends View {
         for(int li=0;li<leaves;li++) { float frac=.28f+li*(.48f/Math.max(1,leaves-1)); int side=li%2==0?-1:1; drawLeaf(c,x+sway*frac,ground-stem*frac,side,g[(3+li)%18],scale,leafType); }
         p.setStyle(Paint.Style.FILL); float cx=x+sway,cy=ground-stem;
         int petals=5+(int)(g[5]*8), layers=1+(int)(g[6]*3); float hue=g[7]*360, hue2=(hue+35+g[8]*145)%360;
+        float faceTilt=(g[25]-.5f)*1.25f;
+        p.setColor(Color.argb(65,15,10,35));
+        c.drawOval(cx-dp(31)*scale,cy-dp(21)*scale,cx+dp(35)*scale,cy+dp(29)*scale,p);
         for(int layer=layers-1;layer>=0;layer--) {
             float radius=dp((26+g[9]*24-layer*5)*scale), width=dp((11+g[10]*16)*scale);
             for(int i=0;i<petals;i++) {
-                float a=(float)(Math.PI*2*i/petals+layer*.19+g[11]*.28); c.save(); c.rotate((float)Math.toDegrees(a)+90,cx,cy);
+                float a=(float)(Math.PI*2*i/petals+layer*.19+g[11]*.28);
+                float perspective=.66f+.34f*(.5f+.5f*(float)Math.sin(a+faceTilt));
                 int col=Color.HSVToColor((int)(145+g[12]*90),new float[]{layer%2==0?hue:hue2,.38f+g[13]*.55f,.72f+g[14]*.28f});
-                p.setColor(col); RectF petal=new RectF(cx-width/2,cy-radius,cx+width/2,cy+dp(4)*scale); c.drawOval(petal,p); c.restore();
+                drawPetal3D(c,cx,cy,width,radius,col,a,perspective,scale,layer);
             }
         }
-        float core=dp((6+g[15]*8)*scale); p.setShader(new RadialGradient(cx,cy,core*2,Color.WHITE,Color.HSVToColor(new float[]{hue2,.8f,1}),Shader.TileMode.CLAMP)); c.drawCircle(cx,cy,core*2,p); p.setShader(null);
+        float core=dp((6+g[15]*8)*scale);
+        p.setColor(Color.argb(100,20,12,35)); c.drawCircle(cx+dp(2.8f)*scale,cy+dp(4)*scale,core*2.18f,p);
+        p.setShader(new RadialGradient(cx-core*.42f,cy-core*.48f,core*2.5f,Color.WHITE,Color.HSVToColor(new float[]{hue2,.8f,.62f}),Shader.TileMode.CLAMP)); c.drawCircle(cx,cy,core*2,p); p.setShader(null);
+        p.setColor(Color.argb(115,255,245,190));
+        for(int i=0;i<7;i++){float a=(float)(i*Math.PI*2/7);c.drawCircle(cx+(float)Math.cos(a)*core*1.15f,cy+(float)Math.sin(a)*core*1.15f,Math.max(dp(.7f),core*.11f),p);}
         p.setColor(chosen?Color.argb(70,255,240,255):Color.argb(35,220,190,255)); c.drawCircle(cx,cy,dp((34+g[16]*18)*scale),p);
+    }
+
+    private void drawPetal3D(Canvas c,float cx,float cy,float width,float length,int color,float angle,float perspective,float scale,int layer) {
+        c.save(); c.rotate((float)Math.toDegrees(angle)+90,cx,cy); c.scale(1f,perspective,cx,cy);
+        Path petal=new Path(); petal.moveTo(cx,cy+dp(3)*scale);
+        petal.cubicTo(cx-width*.70f,cy-length*.22f,cx-width*.56f,cy-length*.83f,cx,cy-length);
+        petal.cubicTo(cx+width*.56f,cy-length*.83f,cx+width*.70f,cy-length*.22f,cx,cy+dp(3)*scale); petal.close();
+        c.save(); c.translate(dp(1.8f)*scale,dp(3.2f)*scale); p.setShader(null); p.setColor(darken(color,.36f)); c.drawPath(petal,p); c.restore();
+        int highlight=lighten(color,.32f),shadow=darken(color,.27f);
+        p.setShader(new LinearGradient(cx-width*.55f,cy-length,cx+width*.35f,cy,highlight,color,Shader.TileMode.CLAMP)); c.drawPath(petal,p); p.setShader(null);
+        Path fold=new Path(); fold.moveTo(cx,cy+dp(1)*scale); fold.quadTo(cx-width*.18f,cy-length*.48f,cx,cy-length*.91f);
+        p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(Math.max(dp(.6f),width*.055f)); p.setColor(Color.argb(95,Color.red(shadow),Color.green(shadow),Color.blue(shadow))); c.drawPath(fold,p); p.setStyle(Paint.Style.FILL);
+        c.restore();
+    }
+
+    private int lighten(int color,float amount) {
+        int r=(int)(Color.red(color)+(255-Color.red(color))*amount),g=(int)(Color.green(color)+(255-Color.green(color))*amount),b=(int)(Color.blue(color)+(255-Color.blue(color))*amount);
+        return Color.argb(Color.alpha(color),r,g,b);
+    }
+
+    private int darken(int color,float amount) {
+        return Color.argb(Color.alpha(color),(int)(Color.red(color)*(1-amount)),(int)(Color.green(color)*(1-amount)),(int)(Color.blue(color)*(1-amount)));
     }
 
     private void drawLeaf(Canvas c,float x,float y,int side,float gene,float scale,int type) {
