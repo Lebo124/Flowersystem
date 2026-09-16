@@ -62,21 +62,34 @@ public final class FairyGardenView extends View {
     }
 
     private void drawGarden(Canvas c,float t) {
-        float ground=getHeight()-dp(82); p.setColor(Color.rgb(27,63,48)); c.drawRect(0,ground-dp(25),getWidth(),ground,p);
+        float ground=getHeight()-dp(82);
+        p.setColor(Color.rgb(31,48,61)); c.drawOval(-getWidth()*.2f,ground-dp(180),getWidth()*.75f,ground+dp(30),p);
+        p.setColor(Color.rgb(24,67,51)); c.drawOval(getWidth()*.25f,ground-dp(145),getWidth()*1.2f,ground+dp(38),p);
+        p.setColor(Color.rgb(18,74,48)); c.drawRect(0,ground-dp(42),getWidth(),ground,p);
         if(engine.garden.isEmpty()) { p.setColor(Color.rgb(225,210,236)); p.setTextSize(dp(17)); p.setTextAlign(Paint.Align.CENTER); c.drawText("Je tuin wacht op haar eerste gekozen bloemen",getWidth()/2f,getHeight()/2f,p); p.setTextAlign(Paint.Align.LEFT); }
         for(int i=0;i<engine.garden.size();i++) {
-            float x=dp(25)+(i*83)%(Math.max(1,(int)(getWidth()-dp(50))));
-            float y=ground-((i*47)%Math.max(1,(int)(getHeight()*.32f)));
-            float scale=.48f+(i%4)*.08f; drawFlower(c,engine.garden.get(i),x,y,scale,false,t+i*.3f);
+            int hash=Math.abs((i+11)*1103515245+12345);
+            float x=dp(22)+(hash%1000)/999f*(getWidth()-dp(44));
+            float depth=((hash/1000)%1000)/999f;
+            float base=ground-dp(8)-depth*dp(48);
+            float scale=.48f+(1-depth)*.42f;
+            drawFlower(c,engine.garden.get(i),x,base,scale,false,t+i*.3f);
         }
         drawInsects(c,t,ground);
     }
 
     private void drawFlower(Canvas c,FlowerGenome dna,float x,float ground,float scale,boolean chosen,float t) {
-        float[] g=dna.genes; float stem=dp((68+g[0]*48)*scale), sway=(float)Math.sin(t*.7f+g[1]*6)*dp(3);
-        p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(dp(Math.max(1.2f,2.5f*scale))); p.setColor(Color.rgb(70,(int)(125+g[2]*85),95));
-        Path stemPath=new Path(); stemPath.moveTo(x,ground); stemPath.cubicTo(x-dp(8)*scale,ground-stem*.38f,x+sway,ground-stem*.72f,x+sway,ground-stem); c.drawPath(stemPath,p);
-        drawLeaf(c,x-dp(2)*scale,ground-stem*.42f,-1,g[3],scale); drawLeaf(c,x+dp(2)*scale,ground-stem*.62f,1,g[4],scale);
+        float[] g=dna.genes; float stem=dp((62+g[0]*72)*scale), sway=(float)Math.sin(t*.7f+g[1]*6)*dp(3);
+        int stemType=(int)(g[18]*4); float bend=dp((8+g[19]*25)*scale)*(g[20]>.5f?1:-1);
+        p.setStyle(Paint.Style.STROKE); p.setStrokeCap(Paint.Cap.ROUND); p.setStrokeWidth(dp((1.2f+g[21]*3.2f)*scale)); p.setColor(Color.rgb((int)(40+g[22]*45),(int)(105+g[2]*105),(int)(58+g[22]*55)));
+        Path stemPath=new Path(); stemPath.moveTo(x,ground);
+        if(stemType==0) stemPath.cubicTo(x-bend*.15f,ground-stem*.35f,x+bend*.15f,ground-stem*.7f,x+sway,ground-stem);
+        else if(stemType==1) stemPath.cubicTo(x+bend,ground-stem*.25f,x+bend,ground-stem*.76f,x+sway,ground-stem);
+        else if(stemType==2) stemPath.cubicTo(x-bend,ground-stem*.28f,x+bend,ground-stem*.72f,x+sway,ground-stem);
+        else { stemPath.lineTo(x+bend*.45f,ground-stem*.34f); stemPath.lineTo(x-bend*.25f,ground-stem*.68f); stemPath.lineTo(x+sway,ground-stem); }
+        c.drawPath(stemPath,p); p.setStrokeCap(Paint.Cap.BUTT);
+        int leaves=1+(int)(g[23]*4); int leafType=(int)(g[24]*3);
+        for(int li=0;li<leaves;li++) { float frac=.28f+li*(.48f/Math.max(1,leaves-1)); int side=li%2==0?-1:1; drawLeaf(c,x+sway*frac,ground-stem*frac,side,g[(3+li)%18],scale,leafType); }
         p.setStyle(Paint.Style.FILL); float cx=x+sway,cy=ground-stem;
         int petals=5+(int)(g[5]*8), layers=1+(int)(g[6]*3); float hue=g[7]*360, hue2=(hue+35+g[8]*145)%360;
         for(int layer=layers-1;layer>=0;layer--) {
@@ -91,8 +104,13 @@ public final class FairyGardenView extends View {
         p.setColor(chosen?Color.argb(70,255,240,255):Color.argb(35,220,190,255)); c.drawCircle(cx,cy,dp((34+g[16]*18)*scale),p);
     }
 
-    private void drawLeaf(Canvas c,float x,float y,int side,float gene,float scale) {
-        p.setStyle(Paint.Style.FILL); p.setColor(Color.rgb(53,(int)(115+gene*95),91)); Path leaf=new Path(); leaf.moveTo(x,y); leaf.quadTo(x+side*dp(24)*scale,y-dp(20)*scale,x+side*dp(40)*scale,y-dp(4)*scale); leaf.quadTo(x+side*dp(18)*scale,y+dp(8)*scale,x,y); c.drawPath(leaf,p);
+    private void drawLeaf(Canvas c,float x,float y,int side,float gene,float scale,int type) {
+        p.setStyle(Paint.Style.FILL); p.setColor(Color.rgb((int)(35+gene*45),(int)(110+gene*105),(int)(65+gene*55))); Path leaf=new Path(); leaf.moveTo(x,y);
+        float length=dp((22+gene*27)*scale),height=dp((7+(1-gene)*15)*scale);
+        if(type==0) { leaf.quadTo(x+side*length*.55f,y-height*1.4f,x+side*length,y); leaf.quadTo(x+side*length*.48f,y+height,x,y); }
+        else if(type==1) { leaf.cubicTo(x+side*length*.18f,y-height,x+side*length*.82f,y-height*.35f,x+side*length,y); leaf.cubicTo(x+side*length*.72f,y+height*.55f,x+side*length*.22f,y+height,x,y); }
+        else { leaf.cubicTo(x+side*length*.25f,y-height*1.4f,x+side*length*.62f,y-height,x+side*length,y); leaf.cubicTo(x+side*length*.58f,y+height*.2f,x+side*length*.2f,y+height*1.1f,x,y); }
+        c.drawPath(leaf,p);
     }
 
     private void drawInsects(Canvas c,float t,float ground) {
